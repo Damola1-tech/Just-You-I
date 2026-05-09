@@ -322,6 +322,83 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
 .couple-code-lbl{font-size:0.5rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-top:4px;}
 .btn-danger{background:rgba(239,68,68,0.12);border:1.5px solid rgba(239,68,68,0.25);color:#f87171;border-radius:12px;padding:13px;width:100%;font-family:'DM Sans',sans-serif;font-size:0.66rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .btn-danger:active{opacity:0.7;}
+
+/* ── AVATARS ── */
+.avatar{
+  width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cormorant Garamond',serif;font-weight:600;
+  font-size:0.9rem;color:#fff;flex-shrink:0;
+  background:var(--grad);
+  overflow:hidden;border:1.5px solid rgba(180,150,255,0.25);
+  position:relative;cursor:pointer;
+}
+.avatar img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+.avatar.lg{width:72px;height:72px;font-size:1.6rem;border-width:2px;}
+.avatar.sm{width:28px;height:28px;font-size:0.7rem;}
+.avatar-upload-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:4px;}
+.avatar-upload-hint{font-size:0.52rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
+.avatar-edit-badge{
+  position:absolute;bottom:-2px;right:-2px;
+  width:18px;height:18px;border-radius:50%;
+  background:var(--grad);border:2px solid var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.55rem;color:#fff;
+}
+
+/* ── QOTD PROGRESS BAR ── */
+.q-progress-wrap{margin-bottom:14px;}
+.q-progress-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.q-progress-lbl{font-size:0.5rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);}
+.q-progress-count{font-size:0.5rem;color:var(--purple3);}
+.q-progress-track{width:100%;height:4px;background:rgba(180,150,255,0.12);border-radius:100px;overflow:hidden;}
+.q-progress-fill{height:100%;background:var(--grad);border-radius:100px;transition:width 0.4s cubic-bezier(0.34,1.56,0.64,1);}
+.q-action-row{display:flex;gap:8px;margin-bottom:12px;}
+.q-skip-btn{padding:12px 18px;background:transparent;border:1.5px solid var(--border2);border-radius:12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:0.62rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;white-space:nowrap;}
+.q-skip-btn:active{background:rgba(180,150,255,0.06);}
+.q-submit-btn{flex:1;}
+
+/* ── REACTIONS ── */
+.reaction-row{display:flex;align-items:center;gap:5px;margin-top:7px;flex-wrap:wrap;}
+.reaction-chip{
+  display:flex;align-items:center;gap:3px;
+  padding:3px 8px;border-radius:100px;
+  background:rgba(180,150,255,0.08);
+  border:1px solid rgba(180,150,255,0.15);
+  font-size:0.75rem;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:all 0.15s;
+}
+.reaction-chip.mine{background:rgba(124,92,191,0.2);border-color:rgba(124,92,191,0.4);}
+.reaction-chip:active{transform:scale(0.9);}
+.reaction-chip-count{font-size:0.52rem;color:var(--muted);}
+.reaction-add{
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;cursor:pointer;color:var(--muted);
+  -webkit-tap-highlight-color:transparent;
+  transition:all 0.15s;flex-shrink:0;
+}
+.reaction-add:active{background:rgba(124,92,191,0.15);}
+/* reaction picker popup */
+.reaction-picker{
+  position:fixed;z-index:600;
+  background:rgba(22,18,34,0.98);
+  border:1px solid var(--border2);
+  border-radius:18px;padding:10px 12px;
+  display:flex;gap:6px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.6);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  transform:translateY(6px);
+  opacity:0;
+  transition:all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events:none;
+}
+.reaction-picker.show{transform:translateY(0);opacity:1;pointer-events:all;}
+.rp-emoji{font-size:1.3rem;cursor:pointer;padding:4px;border-radius:8px;-webkit-tap-highlight-color:transparent;transition:transform 0.15s;}
+.rp-emoji:active{transform:scale(0.8);}
 </style>
 </head>
 <body>
@@ -553,6 +630,14 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
     <!-- QOTD -->
     <section class="sec" id="s-qotd">
       <div class="sec-head"><div class="sec-h1">Question of the Day</div><div class="sec-h2">One question, two answers</div></div>
+      <!-- progress bar -->
+      <div class="q-progress-wrap">
+        <div class="q-progress-top">
+          <span class="q-progress-lbl">Progress</span>
+          <span class="q-progress-count" id="qProgressCount">1 / 20</span>
+        </div>
+        <div class="q-progress-track"><div class="q-progress-fill" id="qProgressFill" style="width:5%"></div></div>
+      </div>
       <div class="q-card">
         <div class="q-num" id="qNum">Question 1 of 20</div>
         <div class="q-text" id="qText">Loading...</div>
@@ -562,7 +647,10 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
         </div>
       </div>
       <div class="mb12"><span class="lbl" id="qAnswerLbl">Your answer</span><textarea id="qAnswer" rows="3" placeholder="Type your answer..."></textarea></div>
-      <button class="btn btn-fill mb12" onclick="saveQAnswer()">Submit Answer</button>
+      <div class="q-action-row">
+        <button class="q-skip-btn" onclick="skipQuestion()">Skip →</button>
+        <button class="btn btn-fill q-submit-btn" onclick="saveQAnswer()">Submit Answer</button>
+      </div>
       <button class="btn btn-line" onclick="nextQuestion()">Next Question →</button>
     </section>
 
@@ -652,6 +740,21 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
     <!-- SETTINGS -->
     <section class="sec" id="s-settings">
       <div class="sec-head"><div class="sec-h1">Settings</div><div class="sec-h2">Your space, your way</div></div>
+      <!-- avatar -->
+      <div class="settings-section">
+        <div class="settings-title">Your Profile</div>
+        <div class="avatar-upload-wrap">
+          <div class="avatar lg" id="myAvatarSettings" onclick="document.getElementById('avatarFile').click()">
+            <span id="myAvatarInitial">?</span>
+            <div class="avatar-edit-badge">✎</div>
+          </div>
+          <div class="avatar-upload-hint">Tap to change photo</div>
+          <input type="file" id="avatarFile" accept="image/*" style="display:none" onchange="uploadAvatar(this)"/>
+        </div>
+        <div class="settings-row"><span class="settings-row-lbl">Your name</span><span class="settings-row-val" id="set-myname">—</span></div>
+        <div class="settings-row"><span class="settings-row-lbl">Partner</span><span class="settings-row-val" id="set-partnername">—</span></div>
+        <div class="settings-row"><span class="settings-row-lbl">Together since</span><span class="settings-row-val" id="set-start">—</span></div>
+      </div>
       <div class="settings-section">
         <div class="settings-title">Couple Invite Code</div>
         <div class="couple-code-box">
@@ -659,12 +762,6 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
           <div class="couple-code-lbl">Share with your partner to join</div>
         </div>
         <button class="copy-btn" onclick="copyCode()">Copy Code</button>
-      </div>
-      <div class="settings-section">
-        <div class="settings-title">Your Space</div>
-        <div class="settings-row"><span class="settings-row-lbl">Your name</span><span class="settings-row-val" id="set-myname">—</span></div>
-        <div class="settings-row"><span class="settings-row-lbl">Partner</span><span class="settings-row-val" id="set-partnername">—</span></div>
-        <div class="settings-row"><span class="settings-row-lbl">Together since</span><span class="settings-row-val" id="set-start">—</span></div>
       </div>
       <div class="settings-section">
         <div class="settings-title">Next meetup date</div>
@@ -689,6 +786,16 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
       <button class="nt"     id="nt-settings" onclick="goTab('s-settings','nt-settings')"><span class="ni">⚙️</span><span class="nl">Settings</span></button>
     </nav>
   </div>
+</div>
+
+<!-- REACTION PICKER -->
+<div class="reaction-picker" id="reactionPicker">
+  <span class="rp-emoji" onclick="pickReaction('❤️')">❤️</span>
+  <span class="rp-emoji" onclick="pickReaction('😂')">😂</span>
+  <span class="rp-emoji" onclick="pickReaction('😭')">😭</span>
+  <span class="rp-emoji" onclick="pickReaction('🔥')">🔥</span>
+  <span class="rp-emoji" onclick="pickReaction('👀')">👀</span>
+  <span class="rp-emoji" onclick="pickReaction('🥺')">🥺</span>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -716,6 +823,9 @@ let tdMode = 'truth';
 let totI = 0, wyrI = 0, quizI = 0;
 let memBase64 = null;
 let ctcGame = null, ctcSetupCode = '', ctcGuessInput = '', ctcRound = 1, ctcPoll = null;
+let MY_AVATAR = '';   // base64 or url
+let PARTNER_AVATAR = '';
+let reactionTarget = null; // {id, type} currently open picker for
 let notifList = [];
 
 function toast(msg, dur=3000){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),dur);}
@@ -869,9 +979,13 @@ function bootApp(){
   showScreen('screen-loading');
   document.getElementById('screen-loading').classList.remove('hidden');
   document.getElementById('app').style.display='flex';
-  // header names
+  // header names + avatars
   document.getElementById('hdrN1').textContent=MY_NAME.split(' ')[0];
   document.getElementById('hdrN2').textContent=PARTNER_NAME.split(' ')[0];
+  // settings avatar initial
+  const myInitial=MY_NAME.charAt(0).toUpperCase();
+  const myAvatarEl=document.getElementById('myAvatarSettings');
+  if(myAvatarEl)document.getElementById('myAvatarInitial').textContent=myInitial;
   // mood who tabs
   document.getElementById('wt-u1').textContent=MY_NAME.split(' ')[0];
   document.getElementById('wt-u2').textContent=PARTNER_NAME.split(' ')[0];
@@ -902,6 +1016,7 @@ function bootApp(){
   setTimeout(async()=>{
     document.getElementById('screen-loading').classList.add('hidden');
     await loadAll();
+    await loadAvatars();
     await checkNotifs();
     setInterval(updateCd,1000);
     setInterval(bgRefresh,18000);
@@ -1028,9 +1143,23 @@ async function loadMoods(){
   const{data}=await _sb.from('moods').select('*').eq('couple_id',COUPLE.id).order('created_at',{ascending:false}).limit(40);
   const feed=document.getElementById('moodFeed');
   if(!data||!data.length){feed.innerHTML='<div class="empty-state"><span class="empty-icon">💭</span><div class="empty-txt">No moods yet.<br>How are you feeling today?</div></div>';return;}
+  // load all reactions for these moods in one go
+  const ids=data.map(m=>m.id);
+  const{data:allReactions}=await _sb.from('reactions').select('*').eq('couple_id',COUPLE.id).eq('target_type','mood').in('target_id',ids);
   feed.innerHTML=data.map(m=>{
-    const nm=m.who===MY_SLOT?MY_NAME.split(' ')[0]:PARTNER_NAME.split(' ')[0];
-    return '<div class="mood-feed-item"><div class="mfi-em">'+m.emoji+'</div><div class="mfi-body"><div class="mfi-who">'+nm+' · '+m.label+'</div>'+(m.note?'<div class="mfi-note">'+esc(m.note)+'</div>':'')+'<div class="mfi-time">'+fmtTime(m.created_at)+'</div></div></div>';
+    const isMe=m.who===MY_SLOT;
+    const nm=isMe?MY_NAME.split(' ')[0]:PARTNER_NAME.split(' ')[0];
+    const av=isMe?MY_AVATAR:PARTNER_AVATAR;
+    const mReactions=(allReactions||[]).filter(r=>r.target_id===m.id);
+    return`<div class="mood-feed-item">
+      ${makeAvatarEl(av,nm,'sm')}
+      <div class="mfi-body">
+        <div class="mfi-who">${nm} · ${m.label} ${m.emoji}</div>
+        ${m.note?`<div class="mfi-note">${esc(m.note)}</div>`:''}
+        <div class="mfi-time">${fmtTime(m.created_at)}</div>
+        ${renderReactionRow(m.id,'mood',mReactions)}
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -1050,19 +1179,48 @@ async function loadLetters(){
   const{data}=await _sb.from('letters').select('*').eq('couple_id',COUPLE.id).order('created_at',{ascending:false}).limit(20);
   const feed=document.getElementById('letterFeed');
   if(!data||!data.length){feed.innerHTML='<div class="empty-state"><span class="empty-icon">✉️</span><div class="empty-txt">No letters yet.<br>Write your first one ✦</div></div>';return;}
+  const ids=data.map(l=>l.id);
+  const{data:allReactions}=await _sb.from('reactions').select('*').eq('couple_id',COUPLE.id).eq('target_type','letter').in('target_id',ids);
   feed.innerHTML=data.map(l=>{
-    const nm=l.who===MY_SLOT?MY_NAME.split(' ')[0]:PARTNER_NAME.split(' ')[0];
+    const isMe=l.who===MY_SLOT;
+    const nm=isMe?MY_NAME.split(' ')[0]:PARTNER_NAME.split(' ')[0];
+    const av=isMe?MY_AVATAR:PARTNER_AVATAR;
     const safe=esc(l.body);
-    return '<div class="letter-item" onclick="this.querySelector(\'.letter-body\').classList.toggle(\'open\')"><div class="letter-meta"><span class="letter-who">'+nm+'</span><span class="letter-date">'+fmtDate(l.created_at)+'</span></div><div class="letter-preview">'+safe+'</div><div class="letter-body"><div class="letter-body-text">'+safe+'</div></div></div>';
+    const lReactions=(allReactions||[]).filter(r=>r.target_id===l.id);
+    return`<div class="letter-item" onclick="this.querySelector('.letter-body').classList.toggle('open')">
+      <div class="letter-meta">
+        <div style="display:flex;align-items:center;gap:8px">${makeAvatarEl(av,nm,'sm')}<span class="letter-who">${nm}</span></div>
+        <span class="letter-date">${fmtDate(l.created_at)}</span>
+      </div>
+      <div class="letter-preview">${safe}</div>
+      <div class="letter-body"><div class="letter-body-text">${safe}</div></div>
+      ${renderReactionRow(l.id,'letter',lReactions)}
+    </div>`;
   }).join('');
 }
 
 // ── QOTD ──
 const QUESTIONS=["What's one thing you wish I knew about how much I mean to you?","If we could teleport right now, where would you take us?","What song makes you think of me lately?","Describe our relationship in three words — go.","What's your favourite memory of us from this month?","What are you most excited to do together when the distance ends?","If I could read your mind right now, what would I find?","What small thing do I do that secretly makes you smile?","What's one thing you've learned about yourself since we've been together?","What does a perfect day with me look like in your head?","What's a habit of yours you hope I never try to change?","What's something you've been wanting to tell me but haven't yet?","How has loving me changed you?","What do you miss most about being physically together right now?","If you wrote me a love letter today, what would the first line be?","What's one thing on our bucket list you're most excited about?","What do you think makes us work so well together?","What's something that made you think of me today?","What feeling do you get when you hear my voice?","Where do you see us in five years?"];
 function refreshQDisplay(){
-  const q=QUESTIONS[QI%QUESTIONS.length];
+  const total=QUESTIONS.length;
+  const q=QUESTIONS[QI%total];
   ['qText','homeQ'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=q;});
-  const qn=document.getElementById('qNum');if(qn)qn.textContent='Question '+(QI+1)+' of '+QUESTIONS.length;
+  const qn=document.getElementById('qNum');if(qn)qn.textContent='Question '+(QI+1)+' of '+total;
+  // progress bar
+  const fill=document.getElementById('qProgressFill');
+  const count=document.getElementById('qProgressCount');
+  const pct=Math.round(((QI+1)/total)*100);
+  if(fill)fill.style.width=pct+'%';
+  if(count)count.textContent=(QI+1)+' / '+total;
+}
+
+function skipQuestion(){
+  // silent skip — just move to next question, nothing saved
+  QI=(QI+1)%QUESTIONS.length;
+  localStorage.setItem('_qi',QI);
+  document.getElementById('qAnswer').value='';
+  loadQAnswers();
+  toast('Skipped ✦');
 }
 async function loadQAnswers(){
   refreshQDisplay();
@@ -1261,11 +1419,120 @@ function tapNotif(i){const n=notifList[i];if(!n)return;notifList.splice(i,1);ren
 function toggleNotifPanel(){const p=document.getElementById('notifPanel'),o=document.getElementById('notifOverlay');if(p.classList.contains('open')){closeNotifPanel();}else{renderNotifPanel();p.classList.add('open');o.classList.add('open');setLastSeen();}}
 function closeNotifPanel(){document.getElementById('notifPanel').classList.remove('open');document.getElementById('notifOverlay').classList.remove('open');}
 
-// ── COPY CODE ──
+// ── AVATAR ──
+async function loadAvatars(){
+  if(!CURRENT_USER||!COUPLE)return;
+  // load my avatar
+  const{data:myRow}=await _sb.from('users').select('avatar_url,display_name').eq('id',CURRENT_USER.id).single();
+  if(myRow?.avatar_url){
+    MY_AVATAR=myRow.avatar_url;
+    applyAvatar('myAvatarSettings',MY_AVATAR,MY_NAME);
+  }else{
+    applyAvatar('myAvatarSettings','',MY_NAME);
+  }
+  // load partner avatar
+  const{data:partnerRow}=await _sb.from('users').select('avatar_url').eq('couple_id',COUPLE.id).neq('id',CURRENT_USER.id).single();
+  if(partnerRow?.avatar_url){PARTNER_AVATAR=partnerRow.avatar_url;}
+}
+
+function applyAvatar(elId,url,name){
+  const el=document.getElementById(elId);if(!el)return;
+  const initial=el.querySelector('span');
+  if(url){
+    let img=el.querySelector('img');
+    if(!img){img=document.createElement('img');el.appendChild(img);}
+    img.src=url;img.style.display='block';
+    if(initial)initial.style.display='none';
+  }else{
+    if(initial){initial.textContent=name?name.charAt(0).toUpperCase():'?';initial.style.display='block';}
+    const img=el.querySelector('img');if(img)img.style.display='none';
+  }
+}
+
+function makeAvatarEl(url,name,size=''){
+  const cls='avatar'+(size?' '+size:'');
+  const initial=name?name.charAt(0).toUpperCase():'?';
+  if(url)return`<div class="${cls}" style="overflow:hidden"><img src="${url}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/><span style="display:none">${initial}</span></div>`;
+  return`<div class="${cls}"><span>${initial}</span></div>`;
+}
+
+async function uploadAvatar(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    const img=new Image();
+    img.onload=async function(){
+      const canvas=document.createElement('canvas');
+      const MAX=300;let w=img.width,h=img.height;
+      if(w>h){if(w>MAX){h=h*MAX/w;w=MAX;}}else{if(h>MAX){w=w*MAX/h;h=MAX;}}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const b64=canvas.toDataURL('image/jpeg',0.8);
+      MY_AVATAR=b64;
+      sync('loading');
+      await _sb.from('users').update({avatar_url:b64}).eq('id',CURRENT_USER.id);
+      applyAvatar('myAvatarSettings',b64,MY_NAME);
+      sync('');toast('Avatar updated ✦');
+      // refresh feeds
+      await loadMoods();await loadLetters();
+    };img.src=e.target.result;
+  };reader.readAsDataURL(file);
+}
 function copyCode(){
   const code=COUPLE?.invite_code||document.getElementById('room-code-val')?.textContent||'';
   if(!code||code==='——')return;
   navigator.clipboard.writeText(code).then(()=>toast('Code copied! Share it with your partner ✦')).catch(()=>toast('Code: '+code));
+}
+
+// ── REACTIONS ──
+async function loadReactions(targetId,targetType){
+  if(!COUPLE)return[];
+  const{data}=await _sb.from('reactions').select('*').eq('couple_id',COUPLE.id).eq('target_id',targetId).eq('target_type',targetType);
+  return data||[];
+}
+
+function renderReactionRow(targetId,targetType,reactions){
+  const groups={};
+  reactions.forEach(r=>{if(!groups[r.emoji])groups[r.emoji]={count:0,mine:false};groups[r.emoji].count++;if(r.who===MY_SLOT)groups[r.emoji].mine=true;});
+  const chips=Object.entries(groups).map(([emoji,g])=>`<div class="reaction-chip${g.mine?' mine':''}" onclick="toggleReaction('${targetId}','${targetType}','${emoji}')">${emoji}<span class="reaction-chip-count">${g.count>1?g.count:''}</span></div>`).join('');
+  return`<div class="reaction-row" id="rrow-${targetId}">${chips}<div class="reaction-add" onclick="openReactionPicker(event,'${targetId}','${targetType}')">＋</div></div>`;
+}
+
+function openReactionPicker(e,targetId,targetType){
+  e.stopPropagation();
+  reactionTarget={id:targetId,type:targetType};
+  const picker=document.getElementById('reactionPicker');
+  const rect=e.target.getBoundingClientRect();
+  picker.style.top=(rect.top-70)+'px';
+  picker.style.left=Math.max(8,Math.min(rect.left-60,window.innerWidth-220))+'px';
+  picker.classList.add('show');
+  setTimeout(()=>document.addEventListener('click',()=>{picker.classList.remove('show');reactionTarget=null;},{once:true}),10);
+}
+
+async function pickReaction(emoji){
+  document.getElementById('reactionPicker').classList.remove('show');
+  if(!reactionTarget||!COUPLE)return;
+  await toggleReaction(reactionTarget.id,reactionTarget.type,emoji);
+  reactionTarget=null;
+}
+
+async function toggleReaction(targetId,targetType,emoji){
+  if(!COUPLE)return;
+  const{data:existing}=await _sb.from('reactions').select('id,emoji').eq('couple_id',COUPLE.id).eq('target_id',targetId).eq('who',MY_SLOT).maybeSingle();
+  if(existing){
+    if(existing.emoji===emoji){await _sb.from('reactions').delete().eq('id',existing.id);}
+    else{await _sb.from('reactions').update({emoji}).eq('id',existing.id);}
+  }else{
+    await _sb.from('reactions').insert({couple_id:COUPLE.id,target_id:targetId,target_type:targetType,who:MY_SLOT,emoji});
+  }
+  const reactions=await loadReactions(targetId,targetType);
+  const rowEl=document.getElementById('rrow-'+targetId);
+  if(rowEl){
+    const groups={};
+    reactions.forEach(r=>{if(!groups[r.emoji])groups[r.emoji]={count:0,mine:false};groups[r.emoji].count++;if(r.who===MY_SLOT)groups[r.emoji].mine=true;});
+    const chips=Object.entries(groups).map(([em,g])=>`<div class="reaction-chip${g.mine?' mine':''}" onclick="toggleReaction('${targetId}','${targetType}','${em}')">${em}<span class="reaction-chip-count">${g.count>1?g.count:''}</span></div>`).join('');
+    rowEl.innerHTML=chips+`<div class="reaction-add" onclick="openReactionPicker(event,'${targetId}','${targetType}')">＋</div>`;
+  }
 }
 
 // ── GAMES ──
