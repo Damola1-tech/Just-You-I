@@ -1018,6 +1018,7 @@ function bootApp(){
     await loadAll();
     await loadAvatars();
     await checkNotifs();
+    startRealtime();
     setInterval(updateCd,1000);
     setInterval(bgRefresh,18000);
     sync('');
@@ -1536,11 +1537,217 @@ async function toggleReaction(targetId,targetType,emoji){
 }
 
 // ── GAMES ──
-const TOT=[['Beach holiday 🏖️','Mountain retreat 🏔️'],['Cook at home 🍳','Eat out 🍽️'],['Early bird 🌅','Night owl 🦉'],['Video call 📱','Voice note 🎙️'],['Comfortable silence 🤫','Constant chatting 💬'],['Road trip 🚗','Fly there ✈️'],['Rainy night in 🌧️','Stargazing outside 🌌'],['Coffee ☕','Tea 🍵'],['Slow romantic songs 🎵','Hype music 🎶'],['Surprise plans 🎁','Planned dates 📅']];
-const WYR=[['Late-night calls every day','Text lovingly all day but no calls'],['2,000 miles apart but talk daily','1hr away but only meet once a week'],["Know exactly when you'll see each other","Surprise visit — no fixed date"],['Never be apart again','Travel the world together for 2 years'],['Receive a handwritten letter','Get a 10-minute video message'],['Fall asleep on a call together','Fall asleep texting each other'],['Build a shared playlist','Watch the same movie at the same time']];
-const TRUTHS=["What's one thing you want me to know right now that you haven't said?","What was the exact moment you knew you were falling for me?","What's your biggest fear about our relationship?","What's one habit of mine you secretly love?","Describe the feeling you get when you see my name light up your screen.","What's something you've been holding back from telling me?","What do you think our biggest strength as a couple is?","What do you miss most about me in this exact moment?","If I could read your texts from today, what would surprise me?","What does love actually feel like for you?"];
-const DARES=["Send a voice note right now — say three things you love about me.","Set our photo as your phone wallpaper for the next 7 days.","Write me a 5-line poem right now. No edits allowed.","Record a 'good morning' video to send me first thing tomorrow.","Tell me one thing you've been too shy to say out loud.","Sing the first line of a song that reminds you of me — voice note!","Write my name somewhere on your hand and send me a photo.","Plan our next virtual date night and send me the full details right now.","Tell me your favourite memory of us in under 60 seconds — voice note!","Write a fake Instagram caption for a photo of us that doesn't exist yet."];
-const QUIZ=[{q:"What's my go-to comfort food?",opts:["Jollof rice","Pizza","Noodles","Fried plantain"]},{q:"What time do I usually wake up?",opts:["Before 7am","7–9am","After 9am","Depends on the day"]},{q:"My idea of a perfect date is:",opts:["Quiet night in","Exploring somewhere new","Dinner & a movie","Spontaneous adventure"]},{q:"What's my love language?",opts:["Words of affirmation","Quality time","Physical touch","Acts of service"]},{q:"When I'm stressed I:",opts:["Go quiet","Talk it out","Need a distraction","Need alone time"]},{q:"My dream travel destination is:",opts:["Paris 🇫🇷","Maldives 🏝️","Tokyo 🇯🇵","Lagos road trip 🇳🇬"]}];
+const TOT=[
+  // Original
+  ['Beach holiday 🏖️','Mountain retreat 🏔️'],
+  ['Cook at home 🍳','Eat out 🍽️'],
+  ['Road trip 🚗','Fly there ✈️'],
+  ['Rainy night in 🌧️','Stargazing outside 🌌'],
+  ['Coffee ☕','Tea 🍵'],
+  ['Slow romantic songs 🎵','Hype music 🎶'],
+  ['Surprise plans 🎁','Planned dates 📅'],
+  // New
+  ['Morning dates ☀️','Late-night drives 🌙'],
+  ['Text all day 💬','Call every night 📞'],
+  ['Stay in and cuddle 🛋️','Go out and explore 🌍'],
+  ['Matching outfits 👗','Matching tattoos 🖋️'],
+  ['Romantic movies 🎬','Comedy movies 😂'],
+  ['Surprise gifts 🎁','Surprise dates 💃'],
+  ['Love letters 💌','Voice notes 🎙️'],
+  ['Couple posts 📸','Keep it private 🤫'],
+  ['Fancy dinner 🍽️','Street food date 🌮'],
+  ['Slow dancing at home 💃','Partying together 🎉'],
+  ['Sleeping early together 😴','Staying up talking 🌙'],
+  ['Holding hands 🤝','Forehead kisses 😘'],
+  ['Double dates 👫','Alone time 💑'],
+  ['Gaming together 🎮','Watching series together 📺'],
+  ['Big wedding 💍','Small intimate wedding 🌸'],
+  // WYR-style this-or-that
+  ['Search history 🔍','Camera roll 📷'],
+  ['Partner sings badly 🎤','Partner dances badly 💃'],
+  ['Stuck in traffic 🚗','Lost in a mall 🛍️'],
+  ['Share one phone 📱','Share one blanket 🛏️'],
+  ['Fast but dry replies ⚡','Slow but thoughtful replies 💭'],
+  ['Win ₦10 million together 💰','Become famous together ⭐'],
+  ['Partner plans dates 🗓️','Partner plans vacations ✈️'],
+  ['Fight over food 🍕','Fight over playlists 🎵'],
+  ['Be the jealous one 😒','Date the jealous one 😤'],
+  ['Zero arguments 😇','Zero social media drama 📵'],
+  ['Go broke chasing dreams 🌟','Comfortable but boring jobs 💼'],
+  ['Know how it ends 🔮','Never know if they truly love you ❓'],
+  ['Partner reads your mind 🧠','Partner reads your texts 📱'],
+  ['Long distance 2 years 📍','Never travel together ✈️'],
+  ['One huge gesture yearly 🎊','Small gestures daily 💕'],
+  ['Pause arguments ⏸️','Replay happy moments ▶️'],
+  ['Too honest 😬','Too secretive 🤐'],
+  ['Every weekend together 📅','Twice a month but perfect 💫'],
+  ['Roasted daily 😂','Ignored daily 😶'],
+  ['Overshares everything 📢','Hides the relationship 🙈'],
+  ['Lose couple pictures 📸','Lose couple chats 💬'],
+  ["Each other's first love 💕","Each other's last love 💍"],
+  ['Date with no phones 📵','Date with no money 💸'],
+  ['Matching energy ⚡','Opposite personalities 🌓'],
+  ['Fall in love fast ⚡','Fall in love slowly 🌱'],
+  ['Partner forgets birthday 🎂','Partner forgets anniversary 💍'],
+  ['Extremely attractive 😍','Extremely emotionally intelligent 🧠'],
+  ['Chaotic but passionate 🔥','Calm but predictable 🌊'],
+  ['Trapped during argument 😤','Trapped in awkward silence 😶'],
+  ['Start a business together 💼','Create content together 🎥'],
+];
+
+const WYR=[
+  // Original
+  ['Late-night calls every day','Text lovingly all day but no calls'],
+  ['2,000 miles apart but talk daily','1hr away but only meet once a week'],
+  ["Know exactly when you'll see each other","Surprise visit — no fixed date"],
+  ['Never be apart again','Travel the world together for 2 years'],
+  ['Receive a handwritten letter','Get a 10-minute video message'],
+  ['Fall asleep on a call together','Fall asleep texting each other'],
+  ['Build a shared playlist','Watch the same movie at the same time'],
+  // New
+  ['Accidentally call your partner by your ex\'s name','Forget their birthday'],
+  ['Unlimited money for dates','Unlimited free vacations together'],
+  ['Know every thought your partner has for one day','Know every secret they\'ve ever kept'],
+  ['A relationship with zero fights','Endless chemistry'],
+  ['Matching outfits every weekend','Matching wallpapers forever'],
+  ['Get stuck in the rain together','Be stranded at the airport together'],
+  ['Your partner be overly clingy','Your partner be extremely independent'],
+  ['Relive your first date','Skip to your future together'],
+  ['Your dream wedding','Your dream honeymoon'],
+  ['Communicate only through voice notes for a month','Only through texts for a month'],
+  ['Your partner be famous online','Your partner be famous in real life'],
+  ['Never take pictures together again','Never go on dates again'],
+  ['Your partner always steal your food','Your partner always steal your hoodies'],
+  ['Travel the world in luxury together','Build a successful business together'],
+  ['Your partner be brutally honest','Your partner protect your feelings with small lies'],
+  ['Spend one perfect year together','A lifetime of imperfect love'],
+  ['Be each other\'s first love','Be each other\'s last relationship'],
+  ['Arguments always end quickly','Arguments always end romantically'],
+  ['Have a partner who\'s hilarious','Have a partner who\'s deeply romantic'],
+  ['Do everything together','Always maintain separate personal space'],
+  ['Accidentally leak your chats','Accidentally leak your favorite pictures together'],
+  ['Your partner forget your anniversary','Your partner forget your favorite thing about them'],
+  ['Weekly cheap dates','One luxury date every year'],
+  ['Your partner write you a song','Your partner dedicate a tattoo to you'],
+  ['Long-distance with true love','Nearby relationship with no spark'],
+  ['Switch lives with your partner for a week','Read their mind for a day'],
+  ['Your relationship be admired by everyone','Be understood only by you two'],
+  ['Always win arguments','Always get spoiled after arguments'],
+  ['Fall in love slowly over years','Fall in love instantly in one moment'],
+  ['Grow old peacefully together','Stay young forever but never settle down'],
+];
+
+const TRUTHS=[
+  // Original
+  "What's one thing you want me to know right now that you haven't said?",
+  "What was the exact moment you knew you were falling for me?",
+  "What's your biggest fear about our relationship?",
+  "What's one habit of mine you secretly love?",
+  "Describe the feeling you get when you see my name light up your screen.",
+  "What's something you've been holding back from telling me?",
+  "What do you think our biggest strength as a couple is?",
+  "What do you miss most about me in this exact moment?",
+  "If I could read your texts from today, what would surprise me?",
+  "What does love actually feel like for you?",
+  // New
+  "What's something you've never told me because it felt embarrassing?",
+  "What was your first impression of me?",
+  "Have you ever stalked my socials deeply?",
+  "What's one thing you wish I did more often?",
+  "Have you ever been jealous because of me?",
+  "What's your favourite memory of us so far?",
+  "What's something small I do that secretly attracts you?",
+  "What's one thing you're scared could ruin a relationship?",
+  "What's the most dramatic thing you've done because of love?",
+  "What's your biggest relationship red flag?",
+  "If we switched phones for one hour, would you panic?",
+  "What's one thing you noticed about me immediately?",
+  "Have you ever tested someone you liked?",
+  "What's the weirdest dream you've had about a relationship?",
+  "What's something you find hard to admit?",
+  "If you could relive one moment with me, what would it be?",
+  "What's one thing you think we're completely opposite in?",
+  "What's your love language when you're upset?",
+  "Have you ever acted unbothered when you actually cared a lot?",
+  "What's the pettiest reason you've ignored someone?",
+  "What's something romantic you secretly want?",
+  "What's one compliment from me you'll never forget?",
+  "Have you ever imagined our future seriously?",
+  "What's one insecurity you rarely talk about?",
+  "What's your toxic trait in relationships?",
+  "What's one thing you wish people understood about you?",
+  "What's the boldest thing you'd do for love?",
+  "If you had to describe our relationship in 3 words, what would they be?",
+];
+
+const DARES=[
+  // Original
+  "Send a voice note right now — say three things you love about me.",
+  "Set our photo as your phone wallpaper for the next 7 days.",
+  "Write me a 5-line poem right now. No edits allowed.",
+  "Record a 'good morning' video to send me first thing tomorrow.",
+  "Tell me one thing you've been too shy to say out loud.",
+  "Sing the first line of a song that reminds you of me — voice note!",
+  "Write my name somewhere on your hand and send me a photo.",
+  "Plan our next virtual date night and send me the full details right now.",
+  "Tell me your favourite memory of us in under 60 seconds — voice note!",
+  "Write a fake Instagram caption for a photo of us that doesn't exist yet.",
+  // New
+  "Recreate your favourite selfie pose and send it.",
+  "Send a random heart emoji to the 5th person on your chat list.",
+  "Speak in a fake accent for the next 5 minutes.",
+  "Let your partner post any harmless picture on your story.",
+  "Call your partner by a cheesy nickname for the rest of the game.",
+  "Do your best impression of your partner — voice note it!",
+  "Reveal your most-used emoji and explain why.",
+  "Dance with no music for 30 seconds and send the video.",
+  "Text someone 'I have a confession' and don't reply for 5 minutes.",
+  "Let your partner choose your profile picture for a day.",
+  "Serenade your partner with any random song — voice note!",
+  "Act like you're proposing dramatically — send the video.",
+  "Try to make your partner laugh using only texts.",
+  "Read your last message out loud dramatically and record it.",
+  "Pretend you're in a Nollywood breakup scene — voice note!",
+  "Let your partner ask you one question you must answer honestly.",
+  "Give your partner a motivational speech like a football coach.",
+  "Say 3 things you genuinely like about your partner right now.",
+  "Tell your partner the funniest thing they've ever done.",
+  "End this round with your smoothest pickup line.",
+];
+
+const QUIZ=[
+  {q:"What's my go-to comfort food?",opts:["Jollof rice 🍚","Pizza 🍕","Noodles 🍜","Fried plantain 🌽"]},
+  {q:"What's the one thing I always order at restaurants?",opts:["Chicken & chips","Pasta","Suya","Rice & stew"]},
+  {q:"What's my biggest pet peeve?",opts:["Loud chewing","Being late","Ignoring texts","Messy spaces"]},
+  {q:"What's my favourite time of day?",opts:["Early morning","Mid-afternoon","Evening","Late night"]},
+  {q:"What's my most-used app?",opts:["WhatsApp","Instagram","Twitter/X","TikTok"]},
+  {q:"What instantly cheers me up?",opts:["Food","Music","A call from you","Sleep"]},
+  {q:"What's my dream vacation destination?",opts:["Paris 🇫🇷","Maldives 🏝️","Tokyo 🇯🇵","Dubai 🇦🇪"]},
+  {q:"What's my favourite type of music?",opts:["Afrobeats","R&B","Amapiano","Pop"]},
+  {q:"What's something I could talk about for hours?",opts:["Movies & series","Music","Life plans","Relationships"]},
+  {q:"What's my weirdest habit?",opts:["Talking to myself","Overthinking","Sleeping weird","Snacking at night"]},
+  {q:"What's my favourite snack?",opts:["Chin chin","Popcorn","Puff puff","Biscuits"]},
+  {q:"What's the first thing I do when I wake up?",opts:["Check my phone","Pray","Stretch","Go back to sleep"]},
+  {q:"What's my biggest fear?",opts:["Failure","Losing loved ones","Being alone","The unknown"]},
+  {q:"What's my ideal date night?",opts:["Netflix & food","Dinner out","Walk under the stars","Game night"]},
+  {q:"What's my favourite social media platform?",opts:["Instagram","WhatsApp","TikTok","Twitter/X"]},
+  {q:"What's my favourite movie or series genre?",opts:["Romance","Thriller","Comedy","Action"]},
+  {q:"What's one thing I'd buy immediately if I became rich?",opts:["A house","A car","Travel","Invest it"]},
+  {q:"What's my most repeated phrase or slang?",opts:["'Honestly'","'No cap'","'Abeg'","'It is what it is'"]},
+  {q:"What's my favourite weather?",opts:["Sunny & warm ☀️","Cool & breezy 🌬️","Rainy 🌧️","Cold & dark 🌑"]},
+  {q:"What's one thing I can't leave the house without?",opts:["My phone","Earphones","Perfume","Lip balm"]},
+  {q:"What's my hidden talent?",opts:["Singing","Cooking","Drawing","Dancing"]},
+  {q:"What's my favourite way to relax after a stressful day?",opts:["Sleep","Watch something","Eat","Music & solitude"]},
+  {q:"What's my dream car?",opts:["Benz","Porsche","Range Rover","Lamborghini"]},
+  {q:"What's something I'd never eat no matter how hungry I am?",opts:["Snails","Okra","Liver","Raw onions"]},
+  {q:"What's my favourite type of gift?",opts:["Experiences","Jewellery","Cash","Handwritten notes"]},
+  {q:"What's one thing that always makes me emotional?",opts:["Thoughtful gestures","Old memories","Sad movies","Acts of love"]},
+  {q:"What's my go-to time to sleep?",opts:["Before midnight","Around midnight","1–2am","Whenever I pass out"]},
+  {q:"What time do I usually wake up?",opts:["Before 7am","7–9am","After 9am","Depends on the day"]},
+  {q:"My idea of a perfect date is:",opts:["Quiet night in","Exploring somewhere new","Dinner & a movie","Spontaneous adventure"]},
+  {q:"What's my love language?",opts:["Words of affirmation","Quality time","Physical touch","Acts of service"]},
+];
+
 function initGames(){loadTot();loadWyr();loadQuiz();drawCard();}
 function loadTot(){const q=TOT[totI%TOT.length];document.getElementById('tot-q').textContent=q[0]+'  or  '+q[1]+'?';document.getElementById('tot-a').textContent=q[0];document.getElementById('tot-b').textContent=q[1];document.getElementById('tot-rev').classList.remove('show');document.querySelectorAll('#g-tot .game-opt').forEach(o=>o.classList.remove('picked'));}
 function pickTot(i){document.querySelectorAll('#g-tot .game-opt').forEach((o,idx)=>o.classList.toggle('picked',idx===i));document.getElementById('tot-rev').classList.add('show');}
@@ -1554,6 +1761,77 @@ function loadQuiz(){const q=QUIZ[quizI%QUIZ.length];document.getElementById('qui
 function answerQuiz(btn){document.querySelectorAll('#quiz-opts .game-opt').forEach(o=>{o.disabled=true;o.classList.remove('picked');});btn.classList.add('picked');document.getElementById('quiz-rev').classList.add('show');}
 function nextQuiz(){quizI++;loadQuiz();}
 function showGame(id,btn){document.querySelectorAll('.game-panel').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.game-tab').forEach(t=>t.classList.remove('on'));document.getElementById(id).classList.add('on');btn.classList.add('on');if(id==='g-ctc')ctcLoad();}
+
+// ── PWA IN-APP NOTIFICATIONS ──
+// Since full push requires a server, we use Supabase real-time
+// to detect partner activity and show in-app banners instantly.
+let realtimeChannel = null;
+
+function startRealtime(){
+  if(!COUPLE||realtimeChannel)return;
+  realtimeChannel=_sb.channel('couple-'+COUPLE.id)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'letters',filter:'couple_id=eq.'+COUPLE.id},payload=>{
+      if(payload.new.who!==MY_SLOT)showInAppNotif('💌',PARTNER_NAME.split(' ')[0]+' sent you a love letter','s-letters','nt-letters');
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'moods',filter:'couple_id=eq.'+COUPLE.id},payload=>{
+      if(payload.new.who!==MY_SLOT)showInAppNotif(payload.new.emoji,PARTNER_NAME.split(' ')[0]+' is feeling '+payload.new.label,'s-mood','nt-mood');
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'qotd_answers',filter:'couple_id=eq.'+COUPLE.id},payload=>{
+      if(payload.new.who!==MY_SLOT)showInAppNotif('💬',PARTNER_NAME.split(' ')[0]+' answered today\'s question','s-qotd','nt-qotd');
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'memories',filter:'couple_id=eq.'+COUPLE.id},payload=>{
+      showInAppNotif('📸','New memory added: "'+payload.new.caption.slice(0,30)+'"','s-memories','nt-memories');
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'bucket_list',filter:'couple_id=eq.'+COUPLE.id},payload=>{
+      showInAppNotif('🌙','New bucket list item added','s-bucket','nt-bucket');
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'reactions',filter:'couple_id=eq.'+COUPLE.id},payload=>{
+      if(payload.new.who!==MY_SLOT)showInAppNotif(payload.new.emoji,PARTNER_NAME.split(' ')[0]+' reacted to your message',null,null);
+    })
+    .subscribe();
+}
+
+// In-app notification banner that slides in from top
+let inAppQueue=[];let inAppShowing=false;
+function showInAppNotif(icon,message,tab,nav){
+  // add to notifList for bell
+  notifList.unshift({id:'rt-'+Date.now(),icon,text:message,time:new Date().toISOString(),tab,nav});
+  renderNotifBadge();
+  // show banner
+  inAppQueue.push({icon,message,tab,nav});
+  if(!inAppShowing)drainInAppQueue();
+}
+
+function drainInAppQueue(){
+  if(!inAppQueue.length){inAppShowing=false;return;}
+  inAppShowing=true;
+  const{icon,message,tab,nav}=inAppQueue.shift();
+  let banner=document.getElementById('inAppBanner');
+  if(!banner){
+    banner=document.createElement('div');
+    banner.id='inAppBanner';
+    banner.style.cssText='position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-100%);width:100%;max-width:430px;z-index:700;padding:env(safe-area-inset-top,0px) 12px 0;transition:transform 0.3s cubic-bezier(0.34,1.2,0.64,1);';
+    document.body.appendChild(banner);
+  }
+  banner.innerHTML=`<div style="background:rgba(22,18,34,0.97);border:1px solid rgba(180,150,255,0.25);border-radius:16px;padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);margin-top:8px;cursor:pointer;" onclick="inAppTap('${tab}','${nav}')">
+    <div style="width:36px;height:36px;border-radius:50%;background:rgba(124,92,191,0.18);border:1px solid rgba(124,92,191,0.3);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">${icon}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:0.7rem;color:#f0eaf8;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${message}</div>
+      <div style="font-size:0.48rem;color:rgba(240,234,248,0.4);margin-top:2px;letter-spacing:0.08em;text-transform:uppercase">Just Us · tap to open</div>
+    </div>
+  </div>`;
+  requestAnimationFrame(()=>{banner.style.transform='translateX(-50%) translateY(0)';});
+  setTimeout(()=>{
+    banner.style.transform='translateX(-50%) translateY(-120%)';
+    setTimeout(drainInAppQueue,350);
+  },3800);
+}
+
+function inAppTap(tab,nav){
+  const banner=document.getElementById('inAppBanner');
+  if(banner)banner.style.transform='translateX(-50%) translateY(-120%)';
+  if(tab&&nav)goTab(tab,nav);
+}
 </script>
 </body>
 </html>
