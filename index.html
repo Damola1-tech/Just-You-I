@@ -897,16 +897,14 @@ async function doCreateRoom(){
   }).select().single();
   if(error){showScreen('screen-room');err.textContent='Error creating room: '+error.message;return;}
   COUPLE=data;MY_SLOT='user1';PARTNER_SLOT='user2';
-  // link user to couple
-  await _sb.from('users').update({couple_id:data.id}).eq('id',CURRENT_USER.id);
-  // create streak row
+  // save slot to users table so we never have to guess it
+  await _sb.from('users').update({couple_id:data.id,slot:'user1'}).eq('id',CURRENT_USER.id);
   await _sb.from('streak').insert({couple_id:data.id,user1_checked:false,user2_checked:false,streak_count:0,last_date:''});
   document.getElementById('room-code-val').textContent=code;
   document.getElementById('settings-code').textContent=code;
   showScreen('screen-room');
   document.getElementById('room-body').style.display='none';
   document.getElementById('room-waiting').style.display='block';
-  // poll for partner
   ctcPoll=setInterval(checkForPartner,4000);
 }
 
@@ -929,11 +927,11 @@ async function doJoinRoom(){
   if(error||!couple){showScreen('screen-room');err.textContent='Code not found — check with your partner';return;}
   COUPLE=couple;MY_SLOT='user2';PARTNER_SLOT='user1';
   PARTNER_NAME=couple.name1;
-  // update couple with name2
   const myName=MY_NAME||CURRENT_USER.user_metadata?.display_name||'Partner 2';
   MY_NAME=myName;
   await _sb.from('couples').update({name2:myName}).eq('id',couple.id);
-  await _sb.from('users').update({couple_id:couple.id}).eq('id',CURRENT_USER.id);
+  // save slot to users table — this is the source of truth
+  await _sb.from('users').update({couple_id:couple.id,slot:'user2'}).eq('id',CURRENT_USER.id);
   showScreen('screen-setup');
 }
 
@@ -952,8 +950,7 @@ async function doSetup(){
 }
 
 async function resumeSession(){
-  // try to find existing couple linkage
-  const{data:userRow}=await _sb.from('users').select('*,couple_id').eq('id',CURRENT_USER.id).single();
+  const{data:userRow}=await _sb.from('users').select('*').eq('id',CURRENT_USER.id).single();
   if(!userRow||!userRow.couple_id){
     MY_NAME=CURRENT_USER.user_metadata?.display_name||'';
     showScreen('screen-room');
@@ -964,9 +961,26 @@ async function resumeSession(){
   if(!couple){showScreen('screen-room');return;}
   COUPLE=couple;
   MY_NAME=userRow.display_name||CURRENT_USER.user_metadata?.display_name||'';
-  // figure out slot
-  if(couple.name1===MY_NAME){MY_SLOT='user1';PARTNER_SLOT='user2';PARTNER_NAME=couple.name2;}
-  else{MY_SLOT='user2';PARTNER_SLOT='user1';PARTNER_NAME=couple.name1;}
+
+  // READ slot from database — never guess from name
+  if(userRow.slot==='user1'){
+    MY_SLOT='user1';PARTNER_SLOT='user2';
+    PARTNER_NAME=couple.name2||'';
+  }else if(userRow.slot==='user2'){
+    MY_SLOT='user2';PARTNER_SLOT='user1';
+    PARTNER_NAME=couple.name1||'';
+  }else{
+    // slot not set yet — fall back to name matching as last resort
+    if(couple.name1===MY_NAME){
+      MY_SLOT='user1';PARTNER_SLOT='user2';PARTNER_NAME=couple.name2||'';
+      // fix it in db for future
+      await _sb.from('users').update({slot:'user1'}).eq('id',CURRENT_USER.id);
+    }else{
+      MY_SLOT='user2';PARTNER_SLOT='user1';PARTNER_NAME=couple.name1||'';
+      await _sb.from('users').update({slot:'user2'}).eq('id',CURRENT_USER.id);
+    }
+  }
+
   MEET_DATE=localStorage.getItem('_meet')||couple.meet_date||'';
   START_DATE=localStorage.getItem('_start')||couple.start_date||'';
   QI=parseInt(localStorage.getItem('_qi')||'0');
