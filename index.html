@@ -1009,7 +1009,7 @@ function bootApp(){
   // checkin buttons
   document.getElementById('ci-u1').textContent=MY_NAME.split(' ')[0]+' ○';
   document.getElementById('ci-u2').textContent=PARTNER_NAME.split(' ')[0]+' ○';
-  // qotd labels
+  // qotd labels — always show me first, partner second
   document.getElementById('q-lbl-u1').textContent=MY_NAME.split(' ')[0];
   document.getElementById('q-lbl-u2').textContent=PARTNER_NAME.split(' ')[0];
   // letter from
@@ -1242,11 +1242,25 @@ async function loadQAnswers(){
   if(!COUPLE)return;
   const{data}=await _sb.from('qotd_answers').select('*').eq('couple_id',COUPLE.id).eq('question_idx',QI);
   const ans={};if(data)data.forEach(r=>{ans[r.who]=r.answer;});
-  ['user1','user2'].forEach((slot,i)=>{
-    const el=document.getElementById('q-u'+(i+1));if(!el)return;
-    if(ans[slot]){el.className='q-answered';el.textContent=ans[slot];}
-    else{el.className='q-pending';el.textContent="hasn't answered yet";}
-  });
+
+  // Always show MY slot in u1 position, PARTNER slot in u2 position
+  // so the logged-in user always sees themselves first
+  const myEl=document.getElementById('q-u1');
+  const partnerEl=document.getElementById('q-u2');
+  const myLbl=document.getElementById('q-lbl-u1');
+  const partnerLbl=document.getElementById('q-lbl-u2');
+
+  if(myLbl)myLbl.textContent=MY_NAME.split(' ')[0];
+  if(partnerLbl)partnerLbl.textContent=PARTNER_NAME.split(' ')[0];
+
+  if(myEl){
+    if(ans[MY_SLOT]){myEl.className='q-answered';myEl.textContent=ans[MY_SLOT];}
+    else{myEl.className='q-pending';myEl.textContent="hasn't answered yet";}
+  }
+  if(partnerEl){
+    if(ans[PARTNER_SLOT]){partnerEl.className='q-answered';partnerEl.textContent=ans[PARTNER_SLOT];}
+    else{partnerEl.className='q-pending';partnerEl.textContent="hasn't answered yet";}
+  }
 }
 async function saveQAnswer(){
   const val=document.getElementById('qAnswer').value.trim();
