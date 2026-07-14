@@ -1944,7 +1944,7 @@ function inAppTap(tab,nav){
 }
 
 // ── AIYA (AI COMPANION) ──
-const GEMINI_API_KEY = 'AQ.Ab8RN6LC46gvg6CThfpm1Lu_e-w56MJUC8YtvQr4siA7OarvhQ'; // from aistudio.google.com
+const GEMINI_PROXY_URL = 'https://hbdxnixgkqsxkoksdacf.supabase.co/functions/v1/gemini-proxy';
 const GEMINI_MODEL = 'gemini-3.5-flash';
 let aiyaMessages = [];
 let aiyaMemorySummary = '';
@@ -2013,10 +2013,10 @@ async function callGemini(userMessage, retrying=false){
     systemInstruction: {parts:[{text: buildAiyaSystemPrompt()}]},
     contents: [...history, {role:'user', parts:[{text: MY_NAME.split(' ')[0]+': '+userMessage}]}]
   };
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+  const res = await fetch(GEMINI_PROXY_URL, {
     method:'POST',
-    headers:{'Content-Type':'application/json','X-goog-api-key': GEMINI_API_KEY},
-    body: JSON.stringify(body)
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({model: GEMINI_MODEL, body})
   });
   const data = await res.json();
   if(!res.ok){
@@ -2070,10 +2070,10 @@ async function maybeUpdateAiyaMemory(){
   }).join('\n');
   const prompt = `Summarize what you (Aiya) have learned about this couple from the conversation below, combined with anything already known. Keep it under 120 words, written as neutral factual notes, focused on: personalities, recurring topics, emotional patterns, and anything they said they want help with. This will be reused as your private memory of them.\n\nPrevious memory: ${aiyaMemorySummary || 'none yet'}\n\nRecent conversation:\n${convoText}`;
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+    const res = await fetch(GEMINI_PROXY_URL, {
       method:'POST',
-      headers:{'Content-Type':'application/json','X-goog-api-key': GEMINI_API_KEY},
-      body: JSON.stringify({contents:[{role:'user', parts:[{text: prompt}]}]})
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model: GEMINI_MODEL, body:{contents:[{role:'user', parts:[{text: prompt}]}]}})
     });
     const data = await res.json();
     const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text;
