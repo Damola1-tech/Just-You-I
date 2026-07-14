@@ -112,7 +112,7 @@ body::before{
 .bnav-slider{position:absolute;top:4px;bottom:4px;border-radius:19px;background:linear-gradient(135deg,rgba(124,92,191,0.28),rgba(196,96,122,0.2));border:1px solid rgba(124,92,191,0.3);box-shadow:0 2px 14px rgba(124,92,191,0.2);transition:left 0.32s cubic-bezier(0.34,1.56,0.64,1),width 0.32s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none;z-index:0;}
 .nt{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 2px 7px;border:none;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent;position:relative;z-index:1;border-radius:19px;transition:transform 0.15s;min-width:0;}
 .nt:active{transform:scale(0.86);}
-.ni{font-size:1.05rem;line-height:1;display:block;transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1),filter 0.2s;}
+.ni{font-size:1.05rem;line-height:1;display:block;transition:transform 0.22s cubic-bezier(0.34,1.56,0.64,1),filter 0.2s;color:var(--cream);}
 .nl{font-size:0.37rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-top:2px;transition:color 0.2s;}
 .nt.on .nl{color:var(--purple3);}
 .nt.on .ni{transform:translateY(-1px) scale(1.1);filter:drop-shadow(0 0 7px var(--purple)) drop-shadow(0 0 3px var(--purple2));}
@@ -310,6 +310,17 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
 .toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%) translateY(14px);background:rgba(18,16,30,0.96);border:1px solid var(--border2);color:var(--cream);padding:10px 20px;border-radius:100px;font-size:0.68rem;z-index:999;opacity:0;transition:all 0.28s cubic-bezier(0.34,1.56,0.64,1);pointer-events:none;max-width:85vw;text-align:center;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
+/* MORE SHEET */
+.more-overlay{position:fixed;inset:0;z-index:499;background:rgba(0,0,0,0);pointer-events:none;transition:background 0.3s;}
+.more-overlay.open{background:rgba(0,0,0,0.5);pointer-events:all;}
+.more-sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:430px;background:rgba(12,9,20,0.98);border-top:1px solid var(--border2);border-radius:20px 20px 0 0;z-index:500;transition:transform 0.32s cubic-bezier(0.34,1.2,0.64,1);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 -8px 40px rgba(0,0,0,0.6);padding:10px 10px calc(16px + env(safe-area-inset-bottom,0px));}
+.more-sheet.open{transform:translateX(-50%) translateY(0);}
+.more-sheet-handle{width:36px;height:4px;background:var(--border2);border-radius:100px;margin:4px auto 14px;}
+.more-item{width:100%;display:flex;align-items:center;gap:14px;padding:14px 10px;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--cream);font-family:'DM Sans',sans-serif;font-size:0.9rem;cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:left;}
+.more-item:last-child{border-bottom:none;}
+.more-item:active{background:rgba(124,92,191,0.08);}
+.mi-ic{font-size:1.15rem;width:24px;text-align:center;flex-shrink:0;}
+
 /* SETTINGS */
 .settings-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
 .settings-title{font-size:0.52rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
@@ -322,6 +333,22 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
 .couple-code-lbl{font-size:0.5rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-top:4px;}
 .btn-danger{background:rgba(239,68,68,0.12);border:1.5px solid rgba(239,68,68,0.25);color:#f87171;border-radius:12px;padding:13px;width:100%;font-family:'DM Sans',sans-serif;font-size:0.66rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .btn-danger:active{opacity:0.7;}
+
+/* AIYA CHAT */
+.aiya-wrap{display:flex;flex-direction:column;height:100%;}
+.aiya-intro{background:linear-gradient(160deg,#12101e,#1a1230);border:1px solid rgba(124,92,191,0.25);border-radius:18px;padding:18px;margin-bottom:14px;text-align:center;}
+.aiya-name{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.4rem;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px;}
+.aiya-sub{font-size:0.65rem;color:var(--muted);line-height:1.6;}
+.aiya-msgs{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+.aiya-msg{max-width:82%;padding:10px 14px;border-radius:16px;font-size:0.85rem;line-height:1.5;word-break:break-word;}
+.aiya-msg.user1,.aiya-msg.user2{align-self:flex-end;background:var(--grad);color:#fff;border-bottom-right-radius:5px;}
+.aiya-msg.aiya{align-self:flex-start;background:var(--card);border:1px solid var(--border);color:var(--cream);border-bottom-left-radius:5px;}
+.aiya-msg-who{font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.aiya-input-row{display:flex;gap:8px;position:sticky;bottom:0;background:var(--bg);padding-top:8px;}
+.aiya-input-row textarea{flex:1;min-height:44px;max-height:120px;}
+.aiya-send-btn{background:var(--grad);border:none;border-radius:12px;color:#fff;padding:0 18px;font-size:1.1rem;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
+.aiya-typing{font-size:0.7rem;color:var(--muted);font-style:italic;padding:4px 0;display:none;}
+.aiya-typing.show{display:block;}
 
 /* ── AVATARS ── */
 .avatar{
@@ -737,6 +764,22 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
       </div>
     </section>
 
+    <!-- AIYA -->
+    <section class="sec" id="s-aiya">
+      <div class="aiya-wrap">
+        <div class="aiya-intro">
+          <div class="aiya-name">Aiya ✦</div>
+          <div class="aiya-sub">Your private companion for this relationship — she remembers, and she's on both your sides.</div>
+        </div>
+        <div class="aiya-msgs" id="aiyaMsgs"></div>
+        <div class="aiya-typing" id="aiyaTyping">Aiya is typing...</div>
+        <div class="aiya-input-row">
+          <textarea id="aiyaInput" rows="1" placeholder="Talk to Aiya..."></textarea>
+          <button class="aiya-send-btn" onclick="sendAiyaMessage()">➤</button>
+        </div>
+      </div>
+    </section>
+
     <!-- SETTINGS -->
     <section class="sec" id="s-settings">
       <div class="sec-head"><div class="sec-h1">Settings</div><div class="sec-h2">Your space, your way</div></div>
@@ -778,13 +821,20 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
       <div class="bnav-slider" id="navSlider"></div>
       <button class="nt on"  id="nt-home"     onclick="goTab('s-home','nt-home')"        ><span class="ni">🏠</span><span class="nl">Home</span></button>
       <button class="nt"     id="nt-mood"     onclick="goTab('s-mood','nt-mood')"        ><span class="ni">💭</span><span class="nl">Mood</span></button>
-      <button class="nt"     id="nt-letters"  onclick="goTab('s-letters','nt-letters')"  ><span class="ni">✉️</span><span class="nl">Letters</span></button>
       <button class="nt"     id="nt-qotd"     onclick="goTab('s-qotd','nt-qotd')"       ><span class="ni">💬</span><span class="nl">Q&amp;A</span></button>
-      <button class="nt"     id="nt-bucket"   onclick="goTab('s-bucket','nt-bucket')"   ><span class="ni">🌙</span><span class="nl">Bucket</span></button>
       <button class="nt"     id="nt-games"    onclick="goTab('s-games','nt-games')"     ><span class="ni">🎮</span><span class="nl">Games</span></button>
-      <button class="nt"     id="nt-memories" onclick="goTab('s-memories','nt-memories')"><span class="ni">📸</span><span class="nl">Memories</span></button>
-      <button class="nt"     id="nt-settings" onclick="goTab('s-settings','nt-settings')"><span class="ni">⚙️</span><span class="nl">Settings</span></button>
+      <button class="nt"     id="nt-aiya"     onclick="goTab('s-aiya','nt-aiya')"      ><span class="ni">✨</span><span class="nl">Aiya</span></button>
+      <button class="nt"     id="nt-more"     onclick="toggleMoreSheet()"                ><span class="ni">☰</span><span class="nl">More</span></button>
     </nav>
+  </div>
+
+  <div class="more-overlay" id="moreOverlay" onclick="closeMoreSheet()"></div>
+  <div class="more-sheet" id="moreSheet">
+    <div class="more-sheet-handle"></div>
+    <button class="more-item" onclick="goToMoreTab('s-letters','nt-letters')"><span class="mi-ic">✉️</span><span>Letters</span></button>
+    <button class="more-item" onclick="goToMoreTab('s-bucket','nt-bucket')"><span class="mi-ic">🌙</span><span>Bucket List</span></button>
+    <button class="more-item" onclick="goToMoreTab('s-memories','nt-memories')"><span class="mi-ic">📸</span><span>Memories</span></button>
+    <button class="more-item" onclick="goToMoreTab('s-settings','nt-settings')"><span class="mi-ic">⚙️</span><span>Settings</span></button>
   </div>
 </div>
 
@@ -1069,10 +1119,26 @@ function goTab(sid,nid){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.nt').forEach(b=>b.classList.remove('on'));
   document.getElementById(sid).classList.add('on');
-  document.getElementById(nid).classList.add('on');
+  const navBtn=document.getElementById(nid)||document.getElementById('nt-more');
+  if(navBtn)navBtn.classList.add('on');
   document.getElementById('scrollArea').scrollTop=0;
   requestAnimationFrame(updateNavSlider);
   if(sid==='s-games'){const at=document.querySelector('.game-tab.on');if(at&&at.textContent.includes('Crack'))ctcLoad();}
+  if(sid==='s-aiya')loadAiya();
+}
+
+function toggleMoreSheet(){
+  const s=document.getElementById('moreSheet'),o=document.getElementById('moreOverlay');
+  if(s.classList.contains('open')){closeMoreSheet();}
+  else{s.classList.add('open');o.classList.add('open');}
+}
+function closeMoreSheet(){
+  document.getElementById('moreSheet').classList.remove('open');
+  document.getElementById('moreOverlay').classList.remove('open');
+}
+function goToMoreTab(sid,nid){
+  closeMoreSheet();
+  setTimeout(()=>goTab(sid,nid),200);
 }
 
 // ── COUNTDOWN ──
@@ -1816,6 +1882,22 @@ function startRealtime(){
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'reactions',filter:'couple_id=eq.'+COUPLE.id},payload=>{
       if(payload.new.who!==MY_SLOT)showInAppNotif(payload.new.emoji,PARTNER_NAME.split(' ')[0]+' reacted to your message',null,null);
     })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'aiya_messages',filter:'couple_id=eq.'+COUPLE.id},payload=>{
+      if(aiyaMessages.some(m=>m.id===payload.new.id))return;
+      aiyaMessages.push(payload.new);
+      renderAiyaMsgs();
+      if(payload.new.who!==MY_SLOT&&payload.new.who!=='aiya')showInAppNotif('✨',PARTNER_NAME.split(' ')[0]+' is talking to Aiya','s-aiya','nt-aiya');
+    })
+    .on('broadcast',{event:'aiya_typing'},({payload})=>{
+      if(payload.who===MY_SLOT)return;
+      document.getElementById('aiyaTyping').classList.toggle('show',payload.typing);
+    })
+    .on('broadcast',{event:'aiya_message'},({payload})=>{
+      if(aiyaMessages.some(m=>m.id===payload.id))return;
+      aiyaMessages.push(payload);
+      renderAiyaMsgs();
+      if(payload.who!==MY_SLOT&&payload.who!=='aiya')document.getElementById('aiyaTyping').classList.remove('show');
+    })
     .subscribe();
 }
 
@@ -1859,6 +1941,147 @@ function inAppTap(tab,nav){
   const banner=document.getElementById('inAppBanner');
   if(banner)banner.style.transform='translateX(-50%) translateY(-120%)';
   if(tab&&nav)goTab(tab,nav);
+}
+
+// ── AIYA (AI COMPANION) ──
+const GEMINI_API_KEY = 'AQ.Ab8RN6LC46gvg6CThfpm1Lu_e-w56MJUC8YtvQr4siA7OarvhQ'; // from aistudio.google.com
+const GEMINI_MODEL = 'gemini-3.5-flash';
+let aiyaMessages = [];
+let aiyaMemorySummary = '';
+let aiyaLoaded = false;
+let aiyaMemoryCounter = 0;
+
+async function loadAiya(){
+  if(!COUPLE || aiyaLoaded) return;
+  aiyaLoaded = true;
+  const {data: memRow} = await _sb.from('aiya_memory').select('*').eq('couple_id', COUPLE.id).maybeSingle();
+  aiyaMemorySummary = memRow?.summary || '';
+  const {data: msgs} = await _sb.from('aiya_messages').select('*').eq('couple_id', COUPLE.id).order('created_at',{ascending:true}).limit(50);
+  aiyaMessages = msgs || [];
+  renderAiyaMsgs();
+  if(!aiyaMessages.length){
+    const greet = `Hi ${MY_NAME.split(' ')[0]} and ${PARTNER_NAME.split(' ')[0]} ✦ I'm Aiya. Think of me as someone in your corner — here to listen, help you understand each other, and remember what matters to you. What's on your mind today?`;
+    await saveAiyaMessage('aiya', greet);
+  }
+  document.getElementById('aiyaInput')?.addEventListener('keydown', e=>{
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendAiyaMessage(); }
+  });
+}
+
+function renderAiyaMsgs(){
+  const el = document.getElementById('aiyaMsgs');
+  if(!el) return;
+  el.innerHTML = aiyaMessages.map(m=>{
+    const label = m.who==='aiya' ? 'Aiya' : (m.who===MY_SLOT ? MY_NAME.split(' ')[0] : PARTNER_NAME.split(' ')[0]);
+    return `<div class="aiya-msg ${m.who}"><div class="aiya-msg-who">${label}</div>${esc(m.message)}</div>`;
+  }).join('');
+  requestAnimationFrame(()=>{ const sa=document.getElementById('scrollArea'); if(sa) sa.scrollTop = sa.scrollHeight; });
+}
+
+async function saveAiyaMessage(who, message){
+  const {data, error} = await _sb.from('aiya_messages').insert({couple_id: COUPLE.id, who, message}).select().single();
+  if(error){ console.error('Aiya save error:', error); toast('Message not saved — check console'); return; }
+  if(data){
+    aiyaMessages.push(data);
+    renderAiyaMsgs();
+    if(realtimeChannel)realtimeChannel.send({type:'broadcast',event:'aiya_message',payload:data});
+  }
+}
+
+function buildAiyaSystemPrompt(){
+  return `You are Aiya, a warm, emotionally intelligent AI companion inside a private couple's app called "Just Us". You are a trusted presence for ${MY_NAME} and ${PARTNER_NAME}, not a generic assistant. Both partners share this same chat, so be mindful you may be speaking to either or both of them.
+
+Relationship context:
+- Partner 1: ${MY_NAME}
+- Partner 2: ${PARTNER_NAME}
+- Together since: ${START_DATE || 'not specified'}
+${aiyaMemorySummary ? '- What you remember about them: ' + aiyaMemorySummary : '- You have no prior memory yet.'}
+
+Tone: gentle, curious, non-judgmental, a little poetic but never corny. Ask thoughtful follow-up questions rather than lecturing.
+
+When either partner shares something emotionally significant, draw on active-listening technique: reflect back what you heard in your own words before responding, name the feeling you're sensing without diagnosing it ("that sounds like it stung" rather than "that sounds like anxiety"), and ask one open question that invites more rather than steering the conversation. If a disagreement between the two of them comes up, help each person articulate what they think the other is feeling, rather than taking sides.
+
+Never diagnose mental health conditions and never claim to replace a real therapist. If something sounds serious — abuse, self-harm, suicidal thoughts, or a crisis — stop the gentle-companion tone, say plainly that you're an AI and not equipped for this, and give a real resource to contact (e.g. a crisis line or urging them to reach a professional immediately). Keep responses conversational and short (2-5 sentences) unless asked for something longer.`;
+}
+
+async function callGemini(userMessage, retrying=false){
+  const history = aiyaMessages.slice(-16).map(m=>({
+    role: m.who==='aiya' ? 'model' : 'user',
+    parts: [{text: (m.who!=='aiya' ? (m.who===MY_SLOT?MY_NAME:PARTNER_NAME).split(' ')[0]+': ' : '') + m.message}]
+  }));
+  const body = {
+    systemInstruction: {parts:[{text: buildAiyaSystemPrompt()}]},
+    contents: [...history, {role:'user', parts:[{text: MY_NAME.split(' ')[0]+': '+userMessage}]}]
+  };
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','X-goog-api-key': GEMINI_API_KEY},
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if(!res.ok){
+    console.error('Gemini error (full):', JSON.stringify(data, null, 2));
+    if((res.status === 429 || res.status === 503) && !retrying){
+      await new Promise(r=>setTimeout(r,3000));
+      return callGemini(userMessage, true);
+    }
+    if(res.status === 429) throw new Error('RATE_LIMIT');
+    if(res.status === 503) throw new Error('OVERLOADED');
+    throw new Error(data?.error?.message || ('Gemini API error '+res.status));
+  }
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || "I'm having trouble finding the words right now — try again in a moment?";
+}
+
+function broadcastTyping(typing){
+  if(realtimeChannel)realtimeChannel.send({type:'broadcast',event:'aiya_typing',payload:{who:MY_SLOT,typing}});
+}
+
+async function sendAiyaMessage(){
+  const input = document.getElementById('aiyaInput');
+  const val = input.value.trim();
+  if(!val || !COUPLE) return;
+  input.value = '';
+  await saveAiyaMessage(MY_SLOT, val);
+  document.getElementById('aiyaTyping').classList.add('show');
+  broadcastTyping(true);
+  try{
+    const reply = await callGemini(val);
+    await saveAiyaMessage('aiya', reply);
+  }catch(e){
+    const msg = e.message === 'RATE_LIMIT'
+      ? "I've hit my thinking limit for the moment — give me about a minute and try again ✦"
+      : e.message === 'OVERLOADED'
+      ? "I'm a bit overwhelmed right now — Google's servers are busy. Try again in a minute ✦"
+      : "Sorry, I couldn't connect just now. Check your connection and try again ✦";
+    await saveAiyaMessage('aiya', msg);
+  }
+  document.getElementById('aiyaTyping').classList.remove('show');
+  broadcastTyping(false);
+  maybeUpdateAiyaMemory();
+}
+
+async function maybeUpdateAiyaMemory(){
+  aiyaMemoryCounter++;
+  if(aiyaMemoryCounter < 6) return;
+  aiyaMemoryCounter = 0;
+  const convoText = aiyaMessages.slice(-30).map(m=>{
+    const label = m.who==='aiya' ? 'Aiya' : (m.who===MY_SLOT?MY_NAME:PARTNER_NAME).split(' ')[0];
+    return label+': '+m.message;
+  }).join('\n');
+  const prompt = `Summarize what you (Aiya) have learned about this couple from the conversation below, combined with anything already known. Keep it under 120 words, written as neutral factual notes, focused on: personalities, recurring topics, emotional patterns, and anything they said they want help with. This will be reused as your private memory of them.\n\nPrevious memory: ${aiyaMemorySummary || 'none yet'}\n\nRecent conversation:\n${convoText}`;
+  try{
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-goog-api-key': GEMINI_API_KEY},
+      body: JSON.stringify({contents:[{role:'user', parts:[{text: prompt}]}]})
+    });
+    const data = await res.json();
+    const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(summary){
+      aiyaMemorySummary = summary.trim();
+      await _sb.from('aiya_memory').upsert({couple_id: COUPLE.id, summary: aiyaMemorySummary, updated_at: new Date().toISOString()}, {onConflict:'couple_id'});
+    }
+  }catch(e){}
 }
 </script>
 </body>
