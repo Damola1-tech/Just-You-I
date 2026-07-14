@@ -349,6 +349,8 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
 .aiya-send-btn{background:var(--grad);border:none;border-radius:12px;color:#fff;padding:0 18px;font-size:1.1rem;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
 .aiya-typing{font-size:0.7rem;color:var(--muted);font-style:italic;padding:4px 0;display:none;}
 .aiya-typing.show{display:block;}
+.aiya-toggle-btn{margin-top:12px;padding:9px 16px;background:rgba(255,255,255,0.04);border:1.5px solid var(--border2);border-radius:100px;color:var(--purple3);font-family:'DM Sans',sans-serif;font-size:0.62rem;font-weight:600;letter-spacing:0.06em;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.15s;}
+.aiya-toggle-btn.paused{background:rgba(232,192,144,0.1);border-color:rgba(232,192,144,0.3);color:var(--gold);}
 
 /* ── AVATARS ── */
 .avatar{
@@ -770,6 +772,7 @@ textarea::placeholder,input::placeholder{color:var(--muted2);}
         <div class="aiya-intro">
           <div class="aiya-name">Aiya ✦</div>
           <div class="aiya-sub">Your private companion for this relationship — she remembers, and she's on both your sides.</div>
+          <button class="aiya-toggle-btn" id="aiyaToggleBtn" onclick="toggleAiyaPause()">⏸ Ask Aiya to hold on</button>
         </div>
         <div class="aiya-msgs" id="aiyaMsgs"></div>
         <div class="aiya-typing" id="aiyaTyping">Aiya is typing...</div>
@@ -1896,7 +1899,14 @@ function startRealtime(){
       if(aiyaMessages.some(m=>m.id===payload.id))return;
       aiyaMessages.push(payload);
       renderAiyaMsgs();
-      if(payload.who!==MY_SLOT&&payload.who!=='aiya')document.getElementById('aiyaTyping').classList.remove('show');
+      if(payload.who!=='aiya'){
+        if(payload.who!==MY_SLOT)document.getElementById('aiyaTyping').classList.remove('show');
+        if(!AIYA_PAUSED || /@aiya/i.test(payload.message)) scheduleAiyaReply();
+      }
+    })
+    .on('broadcast',{event:'aiya_pause_state'},({payload})=>{
+      AIYA_PAUSED = payload.paused;
+      updateAiyaToggleBtn();
     })
     .subscribe();
 }
@@ -1950,30 +1960,38 @@ let aiyaMessages = [];
 let aiyaMemorySummary = '';
 let aiyaLoaded = false;
 let aiyaMemoryCounter = 0;
+let AIYA_PAUSED = false;
 
 async function loadAiya(){
-  if(!COUPLE || aiyaLoaded) return;
-  aiyaLoaded = true;
+  if(!COUPLE) return;
+  AIYA_PAUSED = !!COUPLE.aiya_paused;
+  updateAiyaToggleBtn();
   const {data: memRow} = await _sb.from('aiya_memory').select('*').eq('couple_id', COUPLE.id).maybeSingle();
   aiyaMemorySummary = memRow?.summary || '';
-  const {data: msgs} = await _sb.from('aiya_messages').select('*').eq('couple_id', COUPLE.id).order('created_at',{ascending:true}).limit(50);
-  aiyaMessages = msgs || [];
+  const {data: msgs} = await _sb.from('aiya_messages').select('*').eq('couple_id', COUPLE.id).order('created_at',{ascending:true}).limit(200);
+  const fetched = msgs || [];
+  const existingIds = new Set(aiyaMessages.map(m=>m.id));
+  fetched.forEach(m=>{ if(!existingIds.has(m.id)) aiyaMessages.push(m); });
+  aiyaMessages.sort((a,b)=> new Date(a.created_at) - new Date(b.created_at));
   renderAiyaMsgs();
-  if(!aiyaMessages.length){
+  if(!fetched.length && !aiyaLoaded){
     const greet = `Hi ${MY_NAME.split(' ')[0]} and ${PARTNER_NAME.split(' ')[0]} ✦ I'm Aiya. Think of me as someone in your corner — here to listen, help you understand each other, and remember what matters to you. What's on your mind today?`;
     await saveAiyaMessage('aiya', greet);
   }
-  document.getElementById('aiyaInput')?.addEventListener('keydown', e=>{
-    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendAiyaMessage(); }
-  });
+  if(!aiyaLoaded){
+    aiyaLoaded = true;
+    document.getElementById('aiyaInput')?.addEventListener('keydown', e=>{
+      if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendAiyaMessage(); }
+    });
+  }
 }
-
 function renderAiyaMsgs(){
   const el = document.getElementById('aiyaMsgs');
   if(!el) return;
   el.innerHTML = aiyaMessages.map(m=>{
     const label = m.who==='aiya' ? 'Aiya' : (m.who===MY_SLOT ? MY_NAME.split(' ')[0] : PARTNER_NAME.split(' ')[0]);
-    return `<div class="aiya-msg ${m.who}"><div class="aiya-msg-who">${label}</div>${esc(m.message)}</div>`;
+    const time = m.created_at ? fmtTime(m.created_at) : '';
+    return `<div class="aiya-msg ${m.who}"><div class="aiya-msg-who">${label} · ${time}</div>${esc(m.message)}</div>`;
   }).join('');
   requestAnimationFrame(()=>{ const sa=document.getElementById('scrollArea'); if(sa) sa.scrollTop = sa.scrollHeight; });
 }
@@ -2004,14 +2022,14 @@ When either partner shares something emotionally significant, draw on active-lis
 Never diagnose mental health conditions and never claim to replace a real therapist. If something sounds serious — abuse, self-harm, suicidal thoughts, or a crisis — stop the gentle-companion tone, say plainly that you're an AI and not equipped for this, and give a real resource to contact (e.g. a crisis line or urging them to reach a professional immediately). Keep responses conversational and short (2-5 sentences) unless asked for something longer.`;
 }
 
-async function callGemini(userMessage, retrying=false){
+async function callGemini(retrying=false){
   const history = aiyaMessages.slice(-16).map(m=>({
     role: m.who==='aiya' ? 'model' : 'user',
     parts: [{text: (m.who!=='aiya' ? (m.who===MY_SLOT?MY_NAME:PARTNER_NAME).split(' ')[0]+': ' : '') + m.message}]
   }));
   const body = {
     systemInstruction: {parts:[{text: buildAiyaSystemPrompt()}]},
-    contents: [...history, {role:'user', parts:[{text: MY_NAME.split(' ')[0]+': '+userMessage}]}]
+    contents: history
   };
   const res = await fetch(GEMINI_PROXY_URL, {
     method:'POST',
@@ -2023,7 +2041,7 @@ async function callGemini(userMessage, retrying=false){
     console.error('Gemini error (full):', JSON.stringify(data, null, 2));
     if((res.status === 429 || res.status === 503) && !retrying){
       await new Promise(r=>setTimeout(r,3000));
-      return callGemini(userMessage, true);
+      return callGemini(true);
     }
     if(res.status === 429) throw new Error('RATE_LIMIT');
     if(res.status === 503) throw new Error('OVERLOADED');
@@ -2036,16 +2054,55 @@ function broadcastTyping(typing){
   if(realtimeChannel)realtimeChannel.send({type:'broadcast',event:'aiya_typing',payload:{who:MY_SLOT,typing}});
 }
 
-async function sendAiyaMessage(){
+function updateAiyaToggleBtn(){
+  const btn = document.getElementById('aiyaToggleBtn');
+  if(!btn) return;
+  btn.textContent = AIYA_PAUSED ? '💬 Bring Aiya back' : '⏸ Ask Aiya to hold on';
+  btn.classList.toggle('paused', AIYA_PAUSED);
+}
+
+async function toggleAiyaPause(){
+  AIYA_PAUSED = !AIYA_PAUSED;
+  updateAiyaToggleBtn();
+  await _sb.from('couples').update({aiya_paused: AIYA_PAUSED}).eq('id', COUPLE.id);
+  if(realtimeChannel)realtimeChannel.send({type:'broadcast',event:'aiya_pause_state',payload:{paused:AIYA_PAUSED}});
+  const note = AIYA_PAUSED ? "Okay ✦ I'll stay quiet and just listen for now. Tag me with @aiya whenever you're ready." : "I'm back ✦ what did I miss?";
+  await saveAiyaMessage('aiya', note);
+  if(!AIYA_PAUSED) scheduleAiyaReply();
+}
+
+let aiyaReplyTimer = null;
+const AIYA_REPLY_DELAY = 3500;
+
+function sendAiyaMessage(){
   const input = document.getElementById('aiyaInput');
   const val = input.value.trim();
   if(!val || !COUPLE) return;
   input.value = '';
-  await saveAiyaMessage(MY_SLOT, val);
+  const mentioned = /@aiya/i.test(val);
+  saveAiyaMessage(MY_SLOT, val).then(()=>{
+    if(!AIYA_PAUSED || mentioned) scheduleAiyaReply();
+  });
+}
+
+function scheduleAiyaReply(){
+  if(aiyaReplyTimer) clearTimeout(aiyaReplyTimer);
+  aiyaReplyTimer = setTimeout(triggerAiyaReply, AIYA_REPLY_DELAY);
+}
+
+async function triggerAiyaReply(){
+  aiyaReplyTimer = null;
+  if(!aiyaMessages.length) return;
+  const last = aiyaMessages[aiyaMessages.length-1];
+  if(last.who === 'aiya') return;
+
+  const {data: latestRow} = await _sb.from('aiya_messages').select('who,created_at').eq('couple_id', COUPLE.id).order('created_at',{ascending:false}).limit(1).maybeSingle();
+  if(latestRow && latestRow.who === 'aiya' && latestRow.created_at >= last.created_at) return;
+
   document.getElementById('aiyaTyping').classList.add('show');
   broadcastTyping(true);
   try{
-    const reply = await callGemini(val);
+    const reply = await callGemini();
     await saveAiyaMessage('aiya', reply);
   }catch(e){
     const msg = e.message === 'RATE_LIMIT'
