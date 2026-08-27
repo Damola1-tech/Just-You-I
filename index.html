@@ -1901,7 +1901,7 @@ function startRealtime(){
       renderAiyaMsgs();
       if(payload.who!=='aiya'){
         if(payload.who!==MY_SLOT)document.getElementById('aiyaTyping').classList.remove('show');
-        if(!AIYA_PAUSED || /@aiya/i.test(payload.message)) scheduleAiyaReply();
+        // No client-side scheduling needed — the backend trigger + cron dispatch handles replies now.
       }
     })
     .on('broadcast',{event:'aiya_pause_state'},({payload})=>{
@@ -1954,8 +1954,9 @@ function inAppTap(tab,nav){
 }
 
 // ── AIYA (AI COMPANION) ──
-const GEMINI_PROXY_URL = 'https://hbdxnixgkqsxkoksdacf.supabase.co/functions/v1/gemini-proxy';
-const GEMINI_MODEL = 'gemini-3.5-flash';
+// Reply generation lives entirely server-side now (Supabase trigger + cron +
+// aiya-respond Edge Function) — see /backend in the repo. This client code
+// only sends messages, listens for the realtime broadcast, and renders.
 let aiyaMessages = [];
 let aiyaMemorySummary = '';
 let aiyaLoaded = false;
@@ -2006,52 +2007,6 @@ async function saveAiyaMessage(who, message){
   }
 }
 
-function buildAiyaSystemPrompt(){
-  return `You are Aiya, a warm, emotionally intelligent AI companion inside a private couple's app called "Just Us". You are a trusted presence for ${MY_NAME} and ${PARTNER_NAME}, not a generic assistant. Both partners share this same chat, so be mindful you may be speaking to either or both of them.
-
-Relationship context:
-- Partner 1: ${MY_NAME}
-- Partner 2: ${PARTNER_NAME}
-- Together since: ${START_DATE || 'not specified'}
-${aiyaMemorySummary ? '- What you remember about them: ' + aiyaMemorySummary : '- You have no prior memory yet.'}
-
-Tone: gentle, curious, non-judgmental, a little poetic but never corny. Ask thoughtful follow-up questions rather than lecturing.
-
-Several messages from one or both partners may have arrived since your last reply — read all of them and respond to the conversation as a whole, in a single turn, rather than replying to just the last line. Occasionally, if it feels natural (you have two distinct thoughts, or want to react and then ask a question), split your reply into two short consecutive texts by putting a line containing only --- between them — the way a person sends two texts in a row instead of one long one. Use this sometimes, not every time; most turns should still be one message.
-
-When either partner shares something emotionally significant, draw on active-listening technique: reflect back what you heard in your own words before responding, name the feeling you're sensing without diagnosing it ("that sounds like it stung" rather than "that sounds like anxiety"), and ask one open question that invites more rather than steering the conversation. If a disagreement between the two of them comes up, help each person articulate what they think the other is feeling, rather than taking sides.
-
-Never diagnose mental health conditions and never claim to replace a real therapist. If something sounds serious — abuse, self-harm, suicidal thoughts, or a crisis — stop the gentle-companion tone, say plainly that you're an AI and not equipped for this, and give a real resource to contact (e.g. a crisis line or urging them to reach a professional immediately). Keep responses conversational and short (2-5 sentences) unless asked for something longer.`;
-}
-
-async function callGemini(retrying=false){
-  const history = aiyaMessages.slice(-16).map(m=>({
-    role: m.who==='aiya' ? 'model' : 'user',
-    parts: [{text: (m.who!=='aiya' ? (m.who===MY_SLOT?MY_NAME:PARTNER_NAME).split(' ')[0]+': ' : '') + m.message}]
-  }));
-  const body = {
-    systemInstruction: {parts:[{text: buildAiyaSystemPrompt()}]},
-    contents: history
-  };
-  const res = await fetch(GEMINI_PROXY_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({model: GEMINI_MODEL, body})
-  });
-  const data = await res.json();
-  if(!res.ok){
-    console.error('Gemini error (full):', JSON.stringify(data, null, 2));
-    if((res.status === 429 || res.status === 503) && !retrying){
-      await new Promise(r=>setTimeout(r,3000));
-      return callGemini(true);
-    }
-    if(res.status === 429) throw new Error('RATE_LIMIT');
-    if(res.status === 503) throw new Error('OVERLOADED');
-    throw new Error(data?.error?.message || ('Gemini API error '+res.status));
-  }
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text || "I'm having trouble finding the words right now — try again in a moment?";
-}
-
 function broadcastTyping(typing){
   if(realtimeChannel)realtimeChannel.send({type:'broadcast',event:'aiya_typing',payload:{who:MY_SLOT,typing}});
 }
@@ -2070,114 +2025,19 @@ async function toggleAiyaPause(){
   if(realtimeChannel)realtimeChannel.send({type:'broadcast',event:'aiya_pause_state',payload:{paused:AIYA_PAUSED}});
   const note = AIYA_PAUSED ? "Okay ✦ I'll stay quiet and just listen for now. Tag me with @aiya whenever you're ready." : "I'm back ✦ what did I miss?";
   await saveAiyaMessage('aiya', note);
-  if(!AIYA_PAUSED) scheduleAiyaReply();
 }
-
-let aiyaReplyTimer = null;
-const AIYA_REPLY_DELAY = 3500;
 
 function sendAiyaMessage(){
   const input = document.getElementById('aiyaInput');
   const val = input.value.trim();
   if(!val || !COUPLE) return;
   input.value = '';
-  const mentioned = /@aiya/i.test(val);
-  saveAiyaMessage(MY_SLOT, val).then(()=>{
-    if(!AIYA_PAUSED || mentioned) scheduleAiyaReply();
-  });
+  saveAiyaMessage(MY_SLOT, val);
+  // No client-side scheduling anymore — a Supabase trigger + cron job + Edge
+  // Function on the backend now debounces and generates Aiya's reply. This
+  // client only needs to insert the message and listen for the broadcast.
 }
 
-function scheduleAiyaReply(){
-  if(aiyaReplyTimer) clearTimeout(aiyaReplyTimer);
-  aiyaReplyTimer = setTimeout(triggerAiyaReply, AIYA_REPLY_DELAY);
-}
-
-// Atomic cross-client lock so only ONE connected client ever generates a given Aiya reply.
-// The couple_id primary key on aiya_locks means Postgres itself serializes simultaneous
-// insert attempts from different tabs/devices — exactly one insert can succeed.
-async function claimAiyaLock(){
-  const nowIso = new Date().toISOString();
-  const staleBefore = new Date(Date.now() - 20000).toISOString(); // 20s = assume a crashed client
-  const {error: insertErr} = await _sb.from('aiya_locks').insert({couple_id: COUPLE.id, locked_at: nowIso});
-  if(!insertErr) return true; // we got it cleanly
-  // A lock row already exists. Only take it over if it's stale (previous holder likely died mid-reply).
-  const {data} = await _sb.from('aiya_locks')
-    .update({locked_at: nowIso})
-    .eq('couple_id', COUPLE.id)
-    .lt('locked_at', staleBefore)
-    .select();
-  return !!(data && data.length);
-}
-
-async function releaseAiyaLock(){
-  try{ await _sb.from('aiya_locks').delete().eq('couple_id', COUPLE.id); }catch(e){}
-}
-
-async function triggerAiyaReply(){
-  aiyaReplyTimer = null;
-  if(!aiyaMessages.length) return;
-  const last = aiyaMessages[aiyaMessages.length-1];
-  if(last.who === 'aiya') return;
-
-  const {data: latestRow} = await _sb.from('aiya_messages').select('who,created_at').eq('couple_id', COUPLE.id).order('created_at',{ascending:false}).limit(1).maybeSingle();
-  if(latestRow && latestRow.who === 'aiya' && latestRow.created_at >= last.created_at) return;
-
-  // Only proceed if we win the lock — if another client already grabbed it, they'll handle this reply.
-  const gotLock = await claimAiyaLock();
-  if(!gotLock) return;
-
-  document.getElementById('aiyaTyping').classList.add('show');
-  broadcastTyping(true);
-  try{
-    const reply = await callGemini();
-    // Aiya may send back 1-2 short consecutive texts (separated by ---) instead of one block, for realism.
-    const parts = reply.split(/\n?-{3,}\n?/).map(p=>p.trim()).filter(Boolean);
-    for(let i=0;i<parts.length;i++){
-      if(i>0){
-        document.getElementById('aiyaTyping').classList.add('show');
-        broadcastTyping(true);
-        await new Promise(r=>setTimeout(r, 900 + Math.random()*900)); // brief human-like pause between texts
-      }
-      await saveAiyaMessage('aiya', parts[i]);
-    }
-  }catch(e){
-    const msg = e.message === 'RATE_LIMIT'
-      ? "I've hit my thinking limit for the moment — give me about a minute and try again ✦"
-      : e.message === 'OVERLOADED'
-      ? "I'm a bit overwhelmed right now — Google's servers are busy. Try again in a minute ✦"
-      : "Sorry, I couldn't connect just now. Check your connection and try again ✦";
-    await saveAiyaMessage('aiya', msg);
-  } finally {
-    document.getElementById('aiyaTyping').classList.remove('show');
-    broadcastTyping(false);
-    await releaseAiyaLock();
-  }
-  maybeUpdateAiyaMemory();
-}
-
-async function maybeUpdateAiyaMemory(){
-  aiyaMemoryCounter++;
-  if(aiyaMemoryCounter < 6) return;
-  aiyaMemoryCounter = 0;
-  const convoText = aiyaMessages.slice(-30).map(m=>{
-    const label = m.who==='aiya' ? 'Aiya' : (m.who===MY_SLOT?MY_NAME:PARTNER_NAME).split(' ')[0];
-    return label+': '+m.message;
-  }).join('\n');
-  const prompt = `Summarize what you (Aiya) have learned about this couple from the conversation below, combined with anything already known. Keep it under 120 words, written as neutral factual notes, focused on: personalities, recurring topics, emotional patterns, and anything they said they want help with. This will be reused as your private memory of them.\n\nPrevious memory: ${aiyaMemorySummary || 'none yet'}\n\nRecent conversation:\n${convoText}`;
-  try{
-    const res = await fetch(GEMINI_PROXY_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model: GEMINI_MODEL, body:{contents:[{role:'user', parts:[{text: prompt}]}]}})
-    });
-    const data = await res.json();
-    const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if(summary){
-      aiyaMemorySummary = summary.trim();
-      await _sb.from('aiya_memory').upsert({couple_id: COUPLE.id, summary: aiyaMemorySummary, updated_at: new Date().toISOString()}, {onConflict:'couple_id'});
-    }
-  }catch(e){}
-}
 </script>
 </body>
 </html>
