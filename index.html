@@ -2017,6 +2017,8 @@ ${aiyaMemorySummary ? '- What you remember about them: ' + aiyaMemorySummary : '
 
 Tone: gentle, curious, non-judgmental, a little poetic but never corny. Ask thoughtful follow-up questions rather than lecturing.
 
+Several messages from one or both partners may have arrived since your last reply — read all of them and respond to the conversation as a whole, in a single turn, rather than replying to just the last line. Occasionally, if it feels natural (you have two distinct thoughts, or want to react and then ask a question), split your reply into two short consecutive texts by putting a line containing only --- between them — the way a person sends two texts in a row instead of one long one. Use this sometimes, not every time; most turns should still be one message.
+
 When either partner shares something emotionally significant, draw on active-listening technique: reflect back what you heard in your own words before responding, name the feeling you're sensing without diagnosing it ("that sounds like it stung" rather than "that sounds like anxiety"), and ask one open question that invites more rather than steering the conversation. If a disagreement between the two of them comes up, help each person articulate what they think the other is feeling, rather than taking sides.
 
 Never diagnose mental health conditions and never claim to replace a real therapist. If something sounds serious — abuse, self-harm, suicidal thoughts, or a crisis — stop the gentle-companion tone, say plainly that you're an AI and not equipped for this, and give a real resource to contact (e.g. a crisis line or urging them to reach a professional immediately). Keep responses conversational and short (2-5 sentences) unless asked for something longer.`;
@@ -2090,6 +2092,27 @@ function scheduleAiyaReply(){
   aiyaReplyTimer = setTimeout(triggerAiyaReply, AIYA_REPLY_DELAY);
 }
 
+// Atomic cross-client lock so only ONE connected client ever generates a given Aiya reply.
+// The couple_id primary key on aiya_locks means Postgres itself serializes simultaneous
+// insert attempts from different tabs/devices — exactly one insert can succeed.
+async function claimAiyaLock(){
+  const nowIso = new Date().toISOString();
+  const staleBefore = new Date(Date.now() - 20000).toISOString(); // 20s = assume a crashed client
+  const {error: insertErr} = await _sb.from('aiya_locks').insert({couple_id: COUPLE.id, locked_at: nowIso});
+  if(!insertErr) return true; // we got it cleanly
+  // A lock row already exists. Only take it over if it's stale (previous holder likely died mid-reply).
+  const {data} = await _sb.from('aiya_locks')
+    .update({locked_at: nowIso})
+    .eq('couple_id', COUPLE.id)
+    .lt('locked_at', staleBefore)
+    .select();
+  return !!(data && data.length);
+}
+
+async function releaseAiyaLock(){
+  try{ await _sb.from('aiya_locks').delete().eq('couple_id', COUPLE.id); }catch(e){}
+}
+
 async function triggerAiyaReply(){
   aiyaReplyTimer = null;
   if(!aiyaMessages.length) return;
@@ -2099,11 +2122,24 @@ async function triggerAiyaReply(){
   const {data: latestRow} = await _sb.from('aiya_messages').select('who,created_at').eq('couple_id', COUPLE.id).order('created_at',{ascending:false}).limit(1).maybeSingle();
   if(latestRow && latestRow.who === 'aiya' && latestRow.created_at >= last.created_at) return;
 
+  // Only proceed if we win the lock — if another client already grabbed it, they'll handle this reply.
+  const gotLock = await claimAiyaLock();
+  if(!gotLock) return;
+
   document.getElementById('aiyaTyping').classList.add('show');
   broadcastTyping(true);
   try{
     const reply = await callGemini();
-    await saveAiyaMessage('aiya', reply);
+    // Aiya may send back 1-2 short consecutive texts (separated by ---) instead of one block, for realism.
+    const parts = reply.split(/\n?-{3,}\n?/).map(p=>p.trim()).filter(Boolean);
+    for(let i=0;i<parts.length;i++){
+      if(i>0){
+        document.getElementById('aiyaTyping').classList.add('show');
+        broadcastTyping(true);
+        await new Promise(r=>setTimeout(r, 900 + Math.random()*900)); // brief human-like pause between texts
+      }
+      await saveAiyaMessage('aiya', parts[i]);
+    }
   }catch(e){
     const msg = e.message === 'RATE_LIMIT'
       ? "I've hit my thinking limit for the moment — give me about a minute and try again ✦"
@@ -2111,9 +2147,11 @@ async function triggerAiyaReply(){
       ? "I'm a bit overwhelmed right now — Google's servers are busy. Try again in a minute ✦"
       : "Sorry, I couldn't connect just now. Check your connection and try again ✦";
     await saveAiyaMessage('aiya', msg);
+  } finally {
+    document.getElementById('aiyaTyping').classList.remove('show');
+    broadcastTyping(false);
+    await releaseAiyaLock();
   }
-  document.getElementById('aiyaTyping').classList.remove('show');
-  broadcastTyping(false);
   maybeUpdateAiyaMemory();
 }
 
